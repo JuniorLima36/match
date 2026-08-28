@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Configuração - Date 💖</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+        body {
+            background-color: #d9381e;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background-color: #5c180e;
+            border: 2px solid #7d2416;
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h1 {
+            font-size: 1.5rem;
+            color: #ffccd5;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            font-size: 0.9rem;
+            color: #ffccd5;
+            margin-bottom: 5px;
+        }
+        select, input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px solid #7d2416;
+            background-color: #421009;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+        input:focus, select:focus {
+            border-color: #ff4d4d;
+        }
+        small {
+            color: #ffccd5;
+            opacity: 0.8;
+            font-size: 0.8rem;
+            display: block;
+            margin-top: 3px;
+        }
+        .btn {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: background-color 0.2s;
+        }
+        .btn:hover {
+            background-color: #ff3333;
+        }
+        .result-box {
+            margin-top: 20px;
+            background-color: #421009;
+            padding: 15px;
+            border-radius: 12px;
+            display: none;
+            word-break: break-all;
+            text-align: left;
+        }
+        .result-box a {
+            color: #73ff73;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>⚙️ Gerenciar Configuração</h1>
+        
+        <div class="form-group">
+            <label>Selecione o ID para editar ou criar:</label>
+            <select id="select-id" onchange="gerenciarSelecaoId()">
+                <option value="novo">✨ + Criar Nova Configuração (Novo ID)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Seu WhatsApp (DDI + DDD + Número)</label>
+            <input type="text" id="cfg-phone" placeholder="Ex: 5511999999999">
+            <small>Com código do país e DDD (somente números)</small>
+        </div>
+
+        <div class="form-group">
+            <label>Opções de Comida (separadas por vírgula)</label>
+            <input type="text" id="cfg-foods" placeholder="Hambúrguer, Sushi, Massas, Tacos, Pizza">
+        </div>
+
+        <div class="form-group">
+            <label>Opções de Vibes (separadas por vírgula)</label>
+            <input type="text" id="cfg-vibes" placeholder="Golfe, Caminhada, Cinema, Dança, Parque, Praia">
+        </div>
+
+        <button class="btn" onclick="salvarConfiguracao()">SALVAR E GERAR LINK CURTO 🚀</button>
+
+        <div class="result-box" id="result-box">
+            <label>Seu link exclusivo:</label>
+            <a id="link-gerado" href="#" target="_blank"></a>
+            <small style="margin-top: 8px; color: #73ff73;">Pronto! Agora é só copiar e mandar.</small>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://6a91357d7751d35ce47e4896.mockapi.io/match/preferences";
+        let dadosGlobais = [];
+
+        async function carregarLista() {
+            try {
+                const response = await fetch(API_URL);
+                dadosGlobais = await response.json();
+                
+                const select = document.getElementById('select-id');
+                select.innerHTML = '<option value="novo">✨ + Criar Nova Configuração (Novo ID)</option>';
+                
+                dadosGlobais.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.id;
+                    opt.innerText = `ID ${item.id} (${item.phone})`;
+                    select.appendChild(opt);
+                });
+
+                // Deixa explicitamente selecionado a opção de criar novo por padrão
+                select.value = "novo";
+                gerenciarSelecaoId();
+            } catch (error) {
+                alert("Erro ao conectar com a Mock API.");
+            }
+        }
+
+        function gerenciarSelecaoId() {
+            const idSelecionado = document.getElementById('select-id').value;
+            
+            if (idSelecionado === "novo") {
+                document.getElementById('cfg-phone').value = '';
+                document.getElementById('cfg-foods').value = '';
+                document.getElementById('cfg-vibes').value = '';
+                document.getElementById('result-box').style.display = 'none';
+            } else {
+                const item = dadosGlobais.find(d => d.id == idSelecionado);
+                if (item) {
+                    document.getElementById('cfg-phone').value = item.phone || '';
+                    document.getElementById('cfg-foods').value = Array.isArray(item.foods) ? item.foods.join(', ') : item.foods || '';
+                    document.getElementById('cfg-vibes').value = Array.isArray(item.vibes) ? item.vibes.join(', ') : item.vibes || '';
+                }
+            }
+        }
+
+        async function salvarConfiguracao() {
+            const idSelecionado = document.getElementById('select-id').value;
+            const phone = document.getElementById('cfg-phone').value.trim();
+            const foods = document.getElementById('cfg-foods').value.split(',').map(s => s.trim()).filter(Boolean);
+            const vibes = document.getElementById('cfg-vibes').value.split(',').map(s => s.trim()).filter(Boolean);
+
+            if (!phone) {
+                alert("Por favor, preencha o número do WhatsApp.");
+                return;
+            }
+
+            const payload = { phone, foods, vibes };
+
+            try {
+                let response;
+                let idFinal = idSelecionado;
+
+                if (idSelecionado === "novo") {
+                    response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) {
+                        const novoRegistro = await response.json();
+                        idFinal = novoRegistro.id;
+                    }
+                } else {
+                    response = await fetch(`${API_URL}/${idSelecionado}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                if (response.ok) {
+                    let baseURL = window.location.href.split('?')[0];
+                    if (baseURL.endsWith('config.html')) baseURL = baseURL.replace('config.html', '');
+                    else if (baseURL.endsWith('config')) baseURL = baseURL.replace('config', '');
+
+                    const linkFinal = `${baseURL}?id=${idFinal}`;
+
+                    // Atualiza a lista na memória e no select mantendo o ID selecionado
+                    await carregarLista();
+                    document.getElementById('select-id').value = idFinal;
+                    
+                    // Garante que os campos mantêm os valores corretos preenchidos
+                    gerenciarSelecaoId();
+
+                    // Força a exibição imediata da caixa do link gerado
+                    const resultBox = document.getElementById('result-box');
+                    const linkElement = document.getElementById('link-gerado');
+                    linkElement.href = linkFinal;
+                    linkElement.innerText = linkFinal;
+                    resultBox.style.display = 'block';
+                } else {
+                    alert("Erro ao salvar na API.");
+                }
+            } catch (error) {
+                alert("Erro de rede ao salvar.");
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', carregarLista);
+    </script>
+</body>
+</html>
